@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "BacpacCleaner": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\temp\\arstest.bacpac"
+    }
+  }
+}
