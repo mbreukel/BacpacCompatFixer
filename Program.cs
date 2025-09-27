@@ -439,8 +439,8 @@ class Program
         var oldColor = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
-        Console.WriteLine("║                 BacpacCompatFixer v1.0                      ║");
-        Console.WriteLine("║   Removes AlwaysOn/XTP from .bacpac for better compatibility║");
+        Console.WriteLine("║                 BacpacCompatFixer v1.0                       ║");
+        Console.WriteLine("║   Removes AlwaysOn/XTP from .bacpac for better compatibility ║");
         Console.WriteLine("╚══════════════════════════════════════════════════════════════╝");
         Console.ForegroundColor = oldColor;
         Console.WriteLine();
