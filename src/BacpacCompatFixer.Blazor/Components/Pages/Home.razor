@@ -1,0 +1,50 @@
+﻿@page "/"
+
+<PageTitle>BacpacCompatFixer</PageTitle>
+
+<div class="container mt-4">
+    <h1 class="text-primary">BacpacCompatFixer</h1>
+    <p class="lead">Removes XTP and AlwaysOn features from model.xml to restore import compatibility</p>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">What does it do?</h5>
+                </div>
+                <div class="card-body">
+                    <p>This tool removes all elements and attributes related to AlwaysOn and XTP (In-Memory OLTP) from model.xml in a .bacpac archive and updates the checksum in origin.xml.</p>
+                    <p>This makes the .bacpac importable on SQL Server instances that don't support these features.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Features</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li>Removes AlwaysOn and XTP references</li>
+                        <li>Updates checksums automatically</li>
+                        <li>Optional backup creation</li>
+                        <li>Fast in-place update</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info mt-3" role="alert">
+        <h5>Common Errors This Fixes</h5>
+        <p><strong>Error SQL72014:</strong> AlwaysOn availability group replicas is disabled on this SQL Server instance.</p>
+        <p><strong>Error SQL72045:</strong> Script execution error related to XTP filegroups.</p>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="/bacpacfixer" class="btn btn-primary btn-lg">
+            <span class="bi bi-tools" aria-hidden="true"></span> Go to BacpacFixer Tool
+        </a>
+    </div>
+</div>

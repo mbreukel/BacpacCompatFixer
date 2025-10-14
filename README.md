@@ -25,6 +25,15 @@ This tool removes all elements and attributes related to AlwaysOn and XTP from m
 - Fast in-place update: only model.xml and origin.xml are extracted, modified, and replaced
 - Compatible with .NET 9
 - Open source, MIT License
+- **Available as both Console and Blazor Web applications**
+
+## Project Structure
+
+This solution consists of three projects:
+
+- **BacpacCompatFixer.Core** - Class library containing the core functionality
+- **BacpacCompatFixer.Console** - Console application for command-line usage
+- **BacpacCompatFixer.Blazor** - Blazor Web application with a user-friendly interface
 
 ## Requirements / Prerequisites
 - .NET 9 SDK or newer
@@ -42,19 +51,39 @@ This tool removes all elements and attributes related to AlwaysOn and XTP from m
    ```
 
 ## Usage
+
+### Console Application
 ```
+cd src/BacpacCompatFixer.Console
 dotnet run -- <PathToBacpac> [--no-backup] [--backup-dir <Directory>]
 ```
 - `<PathToBacpac>`: Path to the .bacpac file to process
 - `--no-backup`: (optional) Do not create a backup, even if changes are made
 - `--backup-dir <Directory>`: (optional) Directory for backup file (default: same as .bacpac)
 
-## Examples
+### Blazor Web Application
 ```
+cd src/BacpacCompatFixer.Blazor
+dotnet run
+```
+Then open your browser to the displayed URL (typically https://localhost:5001) and navigate to the BacpacFixer page.
+
+## Examples
+
+### Console Application
+```
+cd src/BacpacCompatFixer.Console
 dotnet run -- "C:\\temp\\arstest.bacpac"
 dotnet run -- "C:\\temp\\arstest.bacpac" --backup-dir "D:\\safeBackups"
 dotnet run -- "C:\\temp\\arstest.bacpac" --no-backup
 ```
+
+### Blazor Web Application
+1. Start the application: `dotnet run` from the `src/BacpacCompatFixer.Blazor` directory
+2. Navigate to the BacpacFixer page in your web browser
+3. Enter the path to your .bacpac file
+4. Optionally configure backup settings
+5. Click "Process .bacpac" to fix the file
 
 ## License
 MIT
@@ -66,7 +95,7 @@ Michael Breukel
 Assisted by GitHub Copilot
 
 ## Keywords / Tags
-bacpac, SQL72014, SQL72045, AlwaysOn, XTP, In-Memory OLTP, import error, model.xml, origin.xml, checksum, compatibility, SQL Server, Azure SQL, fix, repair, remove, script execution error, open source, .NET 9, Copilot
+bacpac, SQL72014, SQL72045, AlwaysOn, XTP, In-Memory OLTP, import error, model.xml, origin.xml, checksum, compatibility, SQL Server, Azure SQL, fix, repair, remove, script execution error, open source, .NET 9, Copilot, Blazor
 
 ## Contributing
 Contributions are welcome! Please open an issue or submit a pull request.

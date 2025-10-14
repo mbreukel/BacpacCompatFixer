@@ -1,0 +1,136 @@
+@page "/bacpacfixer"
+@using BacpacCompatFixer.Core
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>BacpacCompatFixer</PageTitle>
+
+<div class="container mt-4">
+    <h1>BacpacCompatFixer</h1>
+    <p class="lead">Removes AlwaysOn/XTP from .bacpac for better compatibility</p>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="bacpacPath" class="form-label">Path to .bacpac file:</label>
+                <input type="text" class="form-control" id="bacpacPath" @bind="bacpacPath" placeholder="C:\temp\database.bacpac" />
+            </div>
+
+            <div class="mb-3">
+                <label for="backupDir" class="form-label">Backup directory (optional):</label>
+                <input type="text" class="form-control" id="backupDir" @bind="backupDir" placeholder="Leave empty for same directory as .bacpac" />
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="noBackup" @bind="noBackup" />
+                <label class="form-check-label" for="noBackup">
+                    Do not create backup
+                </label>
+            </div>
+
+            <button class="btn btn-primary" @onclick="ProcessBacpac" disabled="@isProcessing">
+                @if (isProcessing)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span> Processing...</span>
+                }
+                else
+                {
+                    <span>Process .bacpac</span>
+                }
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(resultMessage))
+    {
+        <div class="alert @(resultClass) mt-3" role="alert">
+            <h5>@resultTitle</h5>
+            @foreach (var line in resultMessage.Split('\n'))
+            {
+                <p class="mb-1">@line</p>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private string bacpacPath = string.Empty;
+    private string backupDir = string.Empty;
+    private bool noBackup = false;
+    private bool isProcessing = false;
+    private string resultMessage = string.Empty;
+    private string resultClass = string.Empty;
+    private string resultTitle = string.Empty;
+
+    private async Task ProcessBacpac()
+    {
+        if (string.IsNullOrWhiteSpace(bacpacPath))
+        {
+            resultMessage = "Please provide a path to the .bacpac file.";
+            resultClass = "alert-warning";
+            resultTitle = "⚠️ Warning";
+            return;
+        }
+
+        isProcessing = true;
+        resultMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var options = new BacpacFixerOptions
+            {
+                SourceBacpac = bacpacPath,
+                BackupDir = string.IsNullOrWhiteSpace(backupDir) ? null : backupDir,
+                NoBackup = noBackup
+            };
+
+            var service = new BacpacFixerService();
+            var result = await Task.Run(() => service.ProcessBacpac(options));
+
+            if (result.Success)
+            {
+                if (result.Changed)
+                {
+                    var messages = new List<string>();
+                    messages.Add($"✅ {result.Message}");
+                    if (!noBackup && result.BackupPath != null)
+                    {
+                        messages.Add($"🗂️  Backup: {result.BackupPath}");
+                    }
+                    if (result.ModelHash != null)
+                    {
+                        messages.Add($"🔒 SHA256 (model.xml): {result.ModelHash}");
+                    }
+                    resultMessage = string.Join("\n", messages);
+                    resultClass = "alert-success";
+                    resultTitle = "✅ Success";
+                }
+                else
+                {
+                    resultMessage = $"ℹ️  {result.Message}";
+                    resultClass = "alert-info";
+                    resultTitle = "ℹ️ Info";
+                }
+            }
+            else
+            {
+                resultMessage = $"❌ {result.Message}";
+                resultClass = "alert-danger";
+                resultTitle = "❌ Error";
+            }
+        }
+        catch (Exception ex)
+        {
+            resultMessage = $"❌ An error occurred: {ex.Message}";
+            resultClass = "alert-danger";
+            resultTitle = "❌ Error";
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+}
