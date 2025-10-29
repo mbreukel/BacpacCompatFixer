@@ -23,13 +23,6 @@
                 }
             </div>
 
-            <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" id="noBackup" @bind="noBackup" />
-                <label class="form-check-label" for="noBackup">
-                    Do not create backup (original file will be lost)
-                </label>
-            </div>
-
             <button class="btn btn-primary" @onclick="ProcessBacpac" disabled="@(isProcessing || uploadedFilePath == null)">
                 @if (isProcessing)
                 {
@@ -65,11 +58,9 @@
 @code {
     private string? uploadedFilePath;
     private string? processedFilePath;
-    private string? backupFilePath;
     private string? tempDirectory;
     private string selectedFileName = string.Empty;
     private long selectedFileSize = 0;
-    private bool noBackup = false;
     private bool isProcessing = false;
     private string resultMessage = string.Empty;
     private string resultClass = string.Empty;
@@ -148,8 +139,7 @@
             var options = new BacpacFixerOptions
             {
                 SourceBacpac = processedFilePath,
-                BackupDir = noBackup ? null : tempDirectory,
-                NoBackup = noBackup
+                NoBackup = true  // No backup needed for web uploads
             };
 
             var service = new BacpacFixerService();
@@ -161,11 +151,6 @@
                 {
                     var messages = new List<string>();
                     messages.Add($"✅ File processed successfully!");
-                    if (!noBackup && result.BackupPath != null)
-                    {
-                        backupFilePath = result.BackupPath;
-                        messages.Add($"🗂️  Backup created");
-                    }
                     if (result.ModelHash != null)
                     {
                         messages.Add($"🔒 SHA256 (model.xml): {result.ModelHash}");
