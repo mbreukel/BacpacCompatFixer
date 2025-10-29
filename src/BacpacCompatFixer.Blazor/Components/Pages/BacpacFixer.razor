@@ -1,0 +1,261 @@
+@page "/bacpacfixer"
+@using BacpacCompatFixer.Core
+@using Microsoft.AspNetCore.Components.Forms
+@inject IJSRuntime JSRuntime
+@inject IWebHostEnvironment Environment
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+
+<PageTitle>BacpacCompatFixer</PageTitle>
+
+<div class="container mt-4">
+    <h1>BacpacCompatFixer</h1>
+    <p class="lead">Removes AlwaysOn/XTP from .bacpac for better compatibility</p>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="fileUpload" class="form-label">Upload .bacpac file:</label>
+                <InputFile id="fileUpload" class="form-control" OnChange="HandleFileSelected" accept=".bacpac" disabled="@isProcessing" />
+                @if (!string.IsNullOrEmpty(selectedFileName))
+                {
+                    <small class="text-muted">Selected: @selectedFileName (@FormatFileSize(selectedFileSize))</small>
+                }
+            </div>
+
+            <button class="btn btn-primary" @onclick="ProcessBacpac" disabled="@(isProcessing || uploadedFilePath == null)">
+                @if (isProcessing)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span> Processing...</span>
+                }
+                else
+                {
+                    <span>Process .bacpac</span>
+                }
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(resultMessage))
+    {
+        <div class="alert @(resultClass) mt-3" role="alert">
+            <h5>@resultTitle</h5>
+            @foreach (var line in resultMessage.Split('\n'))
+            {
+                <p class="mb-1">@line</p>
+            }
+            @if (processedFilePath != null && File.Exists(processedFilePath))
+            {
+                <button class="btn btn-success mt-2" @onclick="DownloadProcessedFile">
+                    <span class="bi bi-download"></span> Download Processed .bacpac
+                </button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private string? uploadedFilePath;
+    private string? processedFilePath;
+    private string? tempDirectory;
+    private string selectedFileName = string.Empty;
+    private long selectedFileSize = 0;
+    private bool isProcessing = false;
+    private string resultMessage = string.Empty;
+    private string resultClass = string.Empty;
+    private string resultTitle = string.Empty;
+    private const long MaxFileSize = 500 * 1024 * 1024; // 500 MB
+
+    protected override void OnInitialized()
+    {
+        // Create a unique temp directory for this session
+        tempDirectory = Path.Combine(Path.GetTempPath(), "BacpacCompatFixer", Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempDirectory);
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        
+        if (file.Size > MaxFileSize)
+        {
+            resultMessage = $"File size ({FormatFileSize(file.Size)}) exceeds maximum allowed size of {FormatFileSize(MaxFileSize)}.";
+            resultClass = "alert-danger";
+            resultTitle = "❌ Error";
+            return;
+        }
+
+        selectedFileName = file.Name;
+        selectedFileSize = file.Size;
+
+        try
+        {
+            // Clean up previous upload if exists
+            CleanupUploadedFile();
+
+            uploadedFilePath = Path.Combine(tempDirectory!, file.Name);
+            
+            using (var fileStream = new FileStream(uploadedFilePath, FileMode.Create))
+            {
+                await file.OpenReadStream(MaxFileSize).CopyToAsync(fileStream);
+            }
+
+            resultMessage = string.Empty;
+            resultClass = string.Empty;
+            resultTitle = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            resultMessage = $"Failed to upload file: {ex.Message}";
+            resultClass = "alert-danger";
+            resultTitle = "❌ Error";
+            uploadedFilePath = null;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task ProcessBacpac()
+    {
+        if (uploadedFilePath == null || !File.Exists(uploadedFilePath))
+        {
+            resultMessage = "Please upload a .bacpac file first.";
+            resultClass = "alert-warning";
+            resultTitle = "⚠️ Warning";
+            return;
+        }
+
+        isProcessing = true;
+        resultMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            // Create a copy to process
+            processedFilePath = Path.Combine(tempDirectory!, $"processed_{Path.GetFileName(uploadedFilePath)}");
+            File.Copy(uploadedFilePath, processedFilePath, true);
+
+            var options = new BacpacFixerOptions
+            {
+                SourceBacpac = processedFilePath,
+                NoBackup = true  // No backup needed for web uploads
+            };
+
+            var service = new BacpacFixerService();
+            var result = await Task.Run(() => service.ProcessBacpac(options));
+
+            if (result.Success)
+            {
+                if (result.Changed)
+                {
+                    var messages = new List<string>();
+                    messages.Add($"✅ File processed successfully!");
+                    if (result.ModelHash != null)
+                    {
+                        messages.Add($"🔒 SHA256 (model.xml): {result.ModelHash}");
+                    }
+                    messages.Add("Click the button below to download the processed file.");
+                    resultMessage = string.Join("\n", messages);
+                    resultClass = "alert-success";
+                    resultTitle = "✅ Success";
+                }
+                else
+                {
+                    resultMessage = $"ℹ️  {result.Message}";
+                    resultClass = "alert-info";
+                    resultTitle = "ℹ️ Info";
+                    // If no changes, still allow download of the original
+                    processedFilePath = uploadedFilePath;
+                }
+            }
+            else
+            {
+                resultMessage = $"❌ {result.Message}";
+                resultClass = "alert-danger";
+                resultTitle = "❌ Error";
+                processedFilePath = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            resultMessage = $"❌ An error occurred: {ex.Message}";
+            resultClass = "alert-danger";
+            resultTitle = "❌ Error";
+            processedFilePath = null;
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DownloadProcessedFile()
+    {
+        if (processedFilePath == null || !File.Exists(processedFilePath))
+        {
+            return;
+        }
+
+        try
+        {
+            var fileBytes = await File.ReadAllBytesAsync(processedFilePath);
+            var fileName = Path.GetFileName(uploadedFilePath);
+            var base64 = Convert.ToBase64String(fileBytes);
+            
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64);
+        }
+        catch (Exception ex)
+        {
+            resultMessage = $"❌ Failed to download file: {ex.Message}";
+            resultClass = "alert-danger";
+            resultTitle = "❌ Error";
+            StateHasChanged();
+        }
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private void CleanupUploadedFile()
+    {
+        if (uploadedFilePath != null && File.Exists(uploadedFilePath))
+        {
+            try { File.Delete(uploadedFilePath); } catch { }
+            uploadedFilePath = null;
+        }
+    }
+
+    private void CleanupTempFiles()
+    {
+        if (tempDirectory != null && Directory.Exists(tempDirectory))
+        {
+            try
+            {
+                Directory.Delete(tempDirectory, recursive: true);
+            }
+            catch
+            {
+                // Best effort cleanup
+            }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Cleanup when component is disposed (page left)
+        CleanupTempFiles();
+        await Task.CompletedTask;
+    }
+}
