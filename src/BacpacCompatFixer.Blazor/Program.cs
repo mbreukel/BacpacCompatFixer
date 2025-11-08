@@ -23,6 +23,9 @@ builder.Services.AddControllersWithViews()
 // Add purchase verification service
 builder.Services.AddScoped<IPurchaseVerificationService, PurchaseVerificationService>();
 
+// Add rate limiting service
+builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

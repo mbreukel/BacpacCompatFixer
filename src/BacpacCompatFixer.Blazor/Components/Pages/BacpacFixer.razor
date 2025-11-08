@@ -8,6 +8,7 @@
 @inject IJSRuntime JSRuntime
 @inject IWebHostEnvironment Environment
 @inject IPurchaseVerificationService PurchaseService
+@inject IRateLimitService RateLimitService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @rendermode InteractiveServer
 @implements IAsyncDisposable
@@ -99,10 +100,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Create a unique temp directory for this session
-        tempDirectory = Path.Combine(Path.GetTempPath(), "BacpacCompatFixer", Guid.NewGuid().ToString());
-        Directory.CreateDirectory(tempDirectory);
-
         // Get authentication state and purchase status
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
@@ -115,12 +112,23 @@
             
             if (!string.IsNullOrEmpty(currentUserId))
             {
+                // Create a user-specific temp directory for security isolation
+                var sanitizedUserId = string.Concat(currentUserId.Take(20).Where(c => char.IsLetterOrDigit(c) || c == '-'));
+                tempDirectory = Path.Combine(Path.GetTempPath(), "BacpacCompatFixer", sanitizedUserId, Guid.NewGuid().ToString());
+                Directory.CreateDirectory(tempDirectory);
+                
                 purchaseStatus = await PurchaseService.VerifyPurchaseAsync(currentUserId);
                 if (string.IsNullOrEmpty(purchaseStatus.Email) && !string.IsNullOrEmpty(user.Identity.Name))
                 {
                     purchaseStatus.Email = user.Identity.Name;
                 }
             }
+        }
+        else
+        {
+            // Fallback for unauthenticated users (shouldn't happen with authorization)
+            tempDirectory = Path.Combine(Path.GetTempPath(), "BacpacCompatFixer", Guid.NewGuid().ToString());
+            Directory.CreateDirectory(tempDirectory);
         }
     }
 
@@ -183,12 +191,32 @@
             return;
         }
 
+        // Check rate limit
+        if (!string.IsNullOrEmpty(currentUserId))
+        {
+            var canUpload = await RateLimitService.CanUploadAsync(currentUserId);
+            if (!canUpload)
+            {
+                var timeUntilNext = await RateLimitService.GetTimeUntilNextUploadAsync(currentUserId);
+                resultMessage = $"Rate limit exceeded. Please try again in {timeUntilNext?.TotalMinutes:F0} minutes.";
+                resultClass = "alert-warning";
+                resultTitle = "⚠️ Rate Limit";
+                return;
+            }
+        }
+
         isProcessing = true;
         resultMessage = string.Empty;
         StateHasChanged();
 
         try
         {
+            // Record the upload attempt for rate limiting
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                await RateLimitService.RecordUploadAsync(currentUserId);
+            }
+
             // Create a copy to process
             processedFilePath = Path.Combine(tempDirectory!, $"processed_{Path.GetFileName(uploadedFilePath)}");
             File.Copy(uploadedFilePath, processedFilePath, true);
