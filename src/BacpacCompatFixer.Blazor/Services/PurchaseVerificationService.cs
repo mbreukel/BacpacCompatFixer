@@ -47,9 +47,29 @@ public class PurchaseVerificationService : IPurchaseVerificationService
                 MaxFileSizeBytes = FreeTierMaxFileSize
             };
         }
-        catch (Exception ex)
+        catch (IOException ex)
         {
-            _logger.LogError(ex, "Error verifying purchase for user {UserId}", userId);
+            _logger.LogError(ex, "Error reading purchase file for user {UserId}", userId);
+            return new UserPurchaseStatus
+            {
+                UserId = userId,
+                HasPurchased = false,
+                MaxFileSizeBytes = FreeTierMaxFileSize
+            };
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Error deserializing purchase data for user {UserId}", userId);
+            return new UserPurchaseStatus
+            {
+                UserId = userId,
+                HasPurchased = false,
+                MaxFileSizeBytes = FreeTierMaxFileSize
+            };
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogError(ex, "Access denied to purchase file for user {UserId}", userId);
             return new UserPurchaseStatus
             {
                 UserId = userId,
