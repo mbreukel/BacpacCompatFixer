@@ -64,7 +64,7 @@ If you need to access Microsoft Graph API or other Microsoft services:
 ## Step 5: Update Application Configuration
 
 1. Open `appsettings.json` in your Blazor project
-2. Update the `AzureAd` section with your values:
+2. Update the `AzureAd` section with your Client ID:
 
 ```json
 {
@@ -72,7 +72,6 @@ If you need to access Microsoft Graph API or other Microsoft services:
     "Instance": "https://login.microsoftonline.com/",
     "TenantId": "common",
     "ClientId": "YOUR_CLIENT_ID_HERE",
-    "ClientSecret": "YOUR_CLIENT_SECRET_HERE",
     "CallbackPath": "/signin-oidc",
     "SignedOutCallbackPath": "/signout-callback-oidc"
   }
@@ -81,7 +80,7 @@ If you need to access Microsoft Graph API or other Microsoft services:
 
 **Important Notes:**
 - Replace `YOUR_CLIENT_ID_HERE` with the Application (client) ID from Step 2
-- Replace `YOUR_CLIENT_SECRET_HERE` with the client secret value from Step 3
+- **DO NOT** add `ClientSecret` to `appsettings.json` - use User Secrets or environment variables instead (see Step 6)
 - Use `"TenantId": "common"` to support both personal and business Microsoft accounts
 - Use `"TenantId": "YOUR_TENANT_ID"` for single-tenant (organization-only) authentication
 - Use `"TenantId": "organizations"` for multi-tenant business accounts only

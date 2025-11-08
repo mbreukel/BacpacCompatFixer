@@ -114,7 +114,16 @@
             {
                 // Create a user-specific temp directory for security isolation
                 var sanitizedUserId = string.Concat(currentUserId.Take(20).Where(c => char.IsLetterOrDigit(c) || c == '-'));
-                tempDirectory = Path.Combine(Path.GetTempPath(), "BacpacCompatFixer", sanitizedUserId, Guid.NewGuid().ToString());
+                
+                if (string.IsNullOrEmpty(sanitizedUserId))
+                {
+                    // Fall back to GUID-based directory if sanitization fails
+                    tempDirectory = Path.Combine(Path.GetTempPath(), "BacpacCompatFixer", Guid.NewGuid().ToString());
+                }
+                else
+                {
+                    tempDirectory = Path.Combine(Path.GetTempPath(), "BacpacCompatFixer", sanitizedUserId, Guid.NewGuid().ToString());
+                }
                 Directory.CreateDirectory(tempDirectory);
                 
                 purchaseStatus = await PurchaseService.VerifyPurchaseAsync(currentUserId);
@@ -144,7 +153,7 @@
             resultMessage = $"File size ({FormatFileSize(file.Size)}) exceeds maximum allowed size of {FormatFileSize(maxFileSize)}.";
             if (purchaseStatus != null && !purchaseStatus.HasPurchased)
             {
-                resultMessage += "\n\nUpgrade to premium to upload files up to 5 GB.";
+                resultMessage += " Upgrade to premium to upload files up to 5 GB.";
             }
             resultClass = "alert-danger";
             resultTitle = "❌ Error";
@@ -198,7 +207,7 @@
             if (!canUpload)
             {
                 var timeUntilNext = await RateLimitService.GetTimeUntilNextUploadAsync(currentUserId);
-                resultMessage = $"Rate limit exceeded. Please try again in {timeUntilNext?.TotalMinutes:F0} minutes.";
+                resultMessage = $"Rate limit exceeded. Please try again in {(timeUntilNext?.TotalMinutes ?? 1):F0} minutes.";
                 resultClass = "alert-warning";
                 resultTitle = "⚠️ Rate Limit";
                 return;

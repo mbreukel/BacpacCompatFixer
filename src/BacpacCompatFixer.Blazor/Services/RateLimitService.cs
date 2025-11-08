@@ -8,12 +8,11 @@ namespace BacpacCompatFixer.Blazor.Services;
 /// </summary>
 public class RateLimitService : IRateLimitService
 {
-    private readonly ConcurrentDictionary<string, List<DateTime>> _uploadAttempts = new();
+    private readonly ConcurrentDictionary<string, ConcurrentBag<DateTime>> _uploadAttempts = new();
     private readonly ILogger<RateLimitService> _logger;
     
     // Rate limit configuration
     private const int MaxUploadsPerHour = 10; // Free tier: 10 uploads per hour
-    private const int MaxUploadsPremiumPerHour = 50; // Premium tier: 50 uploads per hour
     private static readonly TimeSpan RateLimitWindow = TimeSpan.FromHours(1);
 
     public RateLimitService(ILogger<RateLimitService> logger)
@@ -53,11 +52,9 @@ public class RateLimitService : IRateLimitService
         var now = DateTime.UtcNow;
         _uploadAttempts.AddOrUpdate(
             userId,
-            _ => new List<DateTime> { now },
+            _ => new ConcurrentBag<DateTime> { now },
             (_, attempts) =>
             {
-                // Clean up old attempts
-                attempts.RemoveAll(t => now - t > RateLimitWindow);
                 attempts.Add(now);
                 return attempts;
             }
