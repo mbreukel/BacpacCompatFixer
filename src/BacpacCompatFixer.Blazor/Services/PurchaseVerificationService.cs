@@ -89,6 +89,10 @@ public class PurchaseVerificationService : IPurchaseVerificationService
     {
         // Sanitize userId for file name
         var sanitizedUserId = string.Concat(userId.Where(c => char.IsLetterOrDigit(c) || c == '-' || c == '_'));
+        if (string.IsNullOrEmpty(sanitizedUserId))
+        {
+            throw new ArgumentException("UserId must contain at least one valid character (letter, digit, '-' or '_') after sanitization.", nameof(userId));
+        }
         return Path.Combine(_storageDirectory, $"{sanitizedUserId}.json");
     }
 }
