@@ -26,6 +26,9 @@ This tool removes all elements and attributes related to AlwaysOn and XTP from m
 - Compatible with .NET 9
 - Open source, MIT License
 - **Available as both Console and Blazor Web applications**
+- **🔐 Secure authentication with Microsoft accounts (Personal and Business via Azure AD/Entra ID)**
+- **⭐ Free and Premium tiers with different file size limits**
+- **🛡️ Rate limiting and security features**
 
 ## Project Structure
 
@@ -62,11 +65,39 @@ dotnet run -- <PathToBacpac> [--no-backup] [--backup-dir <Directory>]
 - `--backup-dir <Directory>`: (optional) Directory for backup file (default: same as .bacpac)
 
 ### Blazor Web Application
+
+#### Authentication
+The Blazor web application requires authentication with a Microsoft account (Personal or Business via Azure AD/Entra ID).
+
+**Setup Steps:**
+1. Configure Azure AD authentication (see [AZURE_AD_SETUP.md](AZURE_AD_SETUP.md) for detailed instructions)
+2. Update `appsettings.json` with your Azure AD configuration
+3. Run the application
+
 ```
 cd src/BacpacCompatFixer.Blazor
 dotnet run
 ```
-Then open your browser to the displayed URL (typically https://localhost:5001) and navigate to the BacpacFixer page.
+
+Then open your browser to the displayed URL (typically https://localhost:5001) and:
+1. Sign in with your Microsoft account
+2. Navigate to the BacpacFixer page
+3. Upload your .bacpac file
+4. Click "Process .bacpac" to fix the file
+5. Download the processed file
+
+#### Tier Features
+
+**Free Tier:**
+- Upload files up to **500 MB**
+- All core features included
+- Rate limited to 10 uploads per hour
+
+**Premium Tier:**
+- Upload files up to **5 GB**
+- All core features included
+- Rate limited to 50 uploads per hour
+- Available via Microsoft Marketplace (contact for details)
 
 ## Examples
 
@@ -80,10 +111,13 @@ dotnet run -- "C:\\temp\\arstest.bacpac" --no-backup
 
 ### Blazor Web Application
 1. Start the application: `dotnet run` from the `src/BacpacCompatFixer.Blazor` directory
-2. Navigate to the BacpacFixer page in your web browser
-3. Enter the path to your .bacpac file
-4. Optionally configure backup settings
-5. Click "Process .bacpac" to fix the file
+2. Navigate to the application in your web browser (typically https://localhost:5001)
+3. Sign in with your Microsoft account
+4. Navigate to the BacpacFixer page
+5. Upload your .bacpac file (up to 500 MB for free tier, 5 GB for premium)
+6. Optionally configure backup settings
+7. Click "Process .bacpac" to fix the file
+8. Download the processed file
 
 ## License
 MIT
@@ -95,7 +129,18 @@ Michael Breukel
 Assisted by GitHub Copilot
 
 ## Keywords / Tags
-bacpac, SQL72014, SQL72045, AlwaysOn, XTP, In-Memory OLTP, import error, model.xml, origin.xml, checksum, compatibility, SQL Server, Azure SQL, fix, repair, remove, script execution error, open source, .NET 9, Copilot, Blazor
+bacpac, SQL72014, SQL72045, AlwaysOn, XTP, In-Memory OLTP, import error, model.xml, origin.xml, checksum, compatibility, SQL Server, Azure SQL, fix, repair, remove, script execution error, open source, .NET 9, Copilot, Blazor, authentication, Azure AD, Entra ID, Microsoft Identity, rate limiting, security
+
+## Security Features
+- **Authentication**: Secure sign-in with Microsoft accounts (Personal and Business)
+- **Authorization**: User-based access control
+- **Rate Limiting**: Protection against abuse with configurable limits
+- **File Isolation**: User-specific temp directories prevent cross-user access
+- **Secure Storage**: Purchase status stored securely per user
+- **HTTPS**: Enforced encryption for data in transit
+
+## Configuration
+See [AZURE_AD_SETUP.md](AZURE_AD_SETUP.md) for detailed Azure AD authentication setup instructions.
 
 ## Contributing
 Contributions are welcome! Please open an issue or submit a pull request.
