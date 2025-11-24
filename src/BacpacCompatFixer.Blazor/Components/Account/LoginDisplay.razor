@@ -2,10 +2,10 @@
 
 <AuthorizeView>
     <Authorized>
-        <div class="d-flex align-items-center">
-            <span class="me-2">Hello, @context.User.Identity?.Name!</span>
-            <form action="MicrosoftIdentity/Account/SignOut" method="post">
-                <button type="submit" class="btn btn-sm btn-outline-secondary">Sign out</button>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-nowrap">@context.User.Identity?.Name</span>
+            <form action="Account/SignOut" method="post">
+                <button type="submit" class="btn btn-sm btn-outline-light">Sign out</button>
             </form>
         </div>
     </Authorized>

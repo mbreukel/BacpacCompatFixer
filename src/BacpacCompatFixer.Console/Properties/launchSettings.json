@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "BacpacCompatFixer.Console": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\temp\\arstest.bacpac"
+    }
+  }
+}

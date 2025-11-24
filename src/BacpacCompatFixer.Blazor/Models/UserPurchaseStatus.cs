@@ -34,4 +34,50 @@ public class UserPurchaseStatus
     /// Purchase transaction ID from marketplace
     /// </summary>
     public string? TransactionId { get; set; }
+
+    /// <summary>
+    /// Marketplace subscription ID
+    /// </summary>
+    public string? SubscriptionId { get; set; }
+
+    /// <summary>
+    /// Current plan ID
+    /// </summary>
+    public string? PlanId { get; set; }
+
+    /// <summary>
+    /// Subscription status (Active, Suspended, Unsubscribed)
+    /// </summary>
+    public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Free;
+
+    /// <summary>
+    /// Last update timestamp
+    /// </summary>
+    public DateTime? LastUpdated { get; set; }
+}
+
+/// <summary>
+/// Subscription status enumeration
+/// </summary>
+public enum SubscriptionStatus
+{
+    /// <summary>
+    /// Free tier, no subscription
+    /// </summary>
+    Free,
+
+    /// <summary>
+    /// Active premium subscription
+    /// </summary>
+    Active,
+
+    /// <summary>
+    /// Subscription is suspended (payment issue, etc.)
+    /// </summary>
+    Suspended,
+
+    /// <summary>
+    /// Subscription has been cancelled
+    /// </summary>
+    Unsubscribed
 }

@@ -8,7 +8,27 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add authentication with Microsoft Identity
 builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
-    .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
+    .AddMicrosoftIdentityWebApp(options =>
+    {
+        builder.Configuration.Bind("AzureAd", options);
+        
+        // Set the redirect URI after signout to home page
+        options.SignedOutRedirectUri = "/";
+        
+        // Configure SignOut events
+        options.Events = new OpenIdConnectEvents
+        {
+            OnRedirectToIdentityProviderForSignOut = context =>
+            {
+                // Ensure post logout redirect URI is set correctly
+                if (string.IsNullOrEmpty(context.ProtocolMessage.PostLogoutRedirectUri))
+                {
+                    context.ProtocolMessage.PostLogoutRedirectUri = context.Request.Scheme + "://" + context.Request.Host + context.Options.SignedOutCallbackPath;
+                }
+                return Task.CompletedTask;
+            }
+        };
+    });
 
 // Add authorization services
 builder.Services.AddAuthorization();
@@ -19,6 +39,12 @@ builder.Services.AddCascadingAuthenticationState();
 // Add controllers for authentication UI
 builder.Services.AddControllersWithViews()
     .AddMicrosoftIdentityUI();
+
+// Add HttpClient factory for JWT validation
+builder.Services.AddHttpClient();
+
+// Add JWT token validation service
+builder.Services.AddScoped<IJwtTokenValidationService, JwtTokenValidationService>();
 
 // Add purchase verification service
 builder.Services.AddScoped<IPurchaseVerificationService, PurchaseVerificationService>();
@@ -42,15 +68,19 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseStaticFiles();
+
+app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseAntiforgery();
 
-app.MapStaticAssets();
-
-// Add controllers for authentication
+// Add controllers for authentication BEFORE Blazor components
 app.MapControllers();
+
+app.MapStaticAssets();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
