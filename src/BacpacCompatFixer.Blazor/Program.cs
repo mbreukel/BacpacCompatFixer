@@ -40,14 +40,21 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddControllersWithViews()
     .AddMicrosoftIdentityUI();
 
-// Add HttpClient factory for JWT validation
+// Add HttpClient factory for JWT validation and API calls
 builder.Services.AddHttpClient();
+
+// Add Memory Cache for optional caching
+builder.Services.AddMemoryCache();
 
 // Add JWT token validation service
 builder.Services.AddScoped<IJwtTokenValidationService, JwtTokenValidationService>();
 
-// Add purchase verification service
-builder.Services.AddScoped<IPurchaseVerificationService, PurchaseVerificationService>();
+// Add Marketplace API services (Real-time API-based verification)
+builder.Services.AddScoped<IMarketplaceAuthService, MarketplaceAuthService>();
+builder.Services.AddScoped<IMarketplaceApiService, MarketplaceApiService>();
+
+// Replace file-based service with real-time API-based service
+builder.Services.AddScoped<IPurchaseVerificationService, RealTimePurchaseVerificationService>();
 
 // Add rate limiting service
 builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
