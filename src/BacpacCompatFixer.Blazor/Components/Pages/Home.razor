@@ -1,4 +1,11 @@
 ﻿@page "/"
+@using BacpacCompatFixer.Blazor.Services
+@using BacpacCompatFixer.Blazor.Models
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject IPurchaseVerificationService PurchaseService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@rendermode InteractiveServer
 
 <PageTitle>BacpacCompatFixer</PageTitle>
 
@@ -6,10 +13,20 @@
     <h1 class="text-primary">BacpacCompatFixer</h1>
     <p class="lead">Removes XTP and AlwaysOn features from model.xml to restore import compatibility</p>
 
-    <div class="alert alert-info mb-4">
-        <h5>🔐 Authentication Required</h5>
-        <p class="mb-0">Sign in with your Microsoft account to use this service. Both personal and business accounts (Azure AD/Entra ID) are supported.</p>
-    </div>
+    <AuthorizeView>
+        <Authorized>
+            <div class="alert alert-success mb-4">
+                <h5>✅ Sie sind angemeldet</h5>
+                <p class="mb-0">Sie sind als <strong>@context.User.Identity?.Name</strong> angemeldet. Sie können den Service jetzt nutzen.</p>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <div class="alert alert-info mb-4">
+                <h5>🔐 Authentication Required</h5>
+                <p class="mb-0">Sign in with your Microsoft account to use this service. Both personal and business accounts (Azure AD/Entra ID) are supported.</p>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
 
     <div class="row mt-4">
         <div class="col-md-6">
@@ -66,13 +83,22 @@
                     <h5 class="mb-0">⭐ Premium Tier</h5>
                 </div>
                 <div class="card-body">
+                    @if (purchaseStatus?.HasPurchased == true)
+                    {
+                        <div class="alert alert-success mb-2">
+                            <strong>✅ Sie haben Premium!</strong>
+                        </div>
+                    }
                     <ul>
                         <li>Upload files up to <strong>5 GB</strong></li>
                         <li>All core features included</li>
                         <li>Priority support</li>
                         <li>Available via Microsoft Marketplace</li>
                     </ul>
-                    <p class="mb-0"><small class="text-muted">Contact us for marketplace purchase details</small></p>
+                    @if (purchaseStatus?.HasPurchased != true)
+                    {
+                        <p class="mb-0"><small><a href="https://marketplace.microsoft.com/en-us/product/saas/breukel.bacpaccompatfixer?tab=Overview" target="_blank" rel="noopener noreferrer">Get Premium on Microsoft Marketplace</a></small></p>
+                    }
                 </div>
             </div>
         </div>
@@ -101,3 +127,25 @@
         </div>
     </div>
 </div>
+
+@code {
+    private UserPurchaseStatus? purchaseStatus;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                ?? user.FindFirst("oid")?.Value 
+                ?? user.FindFirst("sub")?.Value;
+            
+            if (!string.IsNullOrEmpty(userId))
+            {
+                purchaseStatus = await PurchaseService.VerifyPurchaseAsync(userId);
+            }
+        }
+    }
+}
