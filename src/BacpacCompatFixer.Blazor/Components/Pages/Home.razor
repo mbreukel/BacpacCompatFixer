@@ -16,8 +16,8 @@
     <AuthorizeView>
         <Authorized>
             <div class="alert alert-success mb-4">
-                <h5>✅ Sie sind angemeldet</h5>
-                <p class="mb-0">Sie sind als <strong>@context.User.Identity?.Name</strong> angemeldet. Sie können den Service jetzt nutzen.</p>
+                <h5>✅ You are signed in</h5>
+                <p class="mb-0">You are signed in as <strong>@context.User.Identity?.Name</strong>. You can now use the service.</p>
             </div>
         </Authorized>
         <NotAuthorized>
@@ -83,10 +83,10 @@
                     <h5 class="mb-0">⭐ Premium Tier</h5>
                 </div>
                 <div class="card-body">
-                    @if (purchaseStatus?.HasPurchased == true)
+                    @if (purchaseStatus?.HasPurchased == true && purchaseStatus.Status == SubscriptionStatus.Active)
                     {
                         <div class="alert alert-success mb-2">
-                            <strong>✅ Sie haben Premium!</strong>
+                            <strong>✅ You have Premium!</strong>
                         </div>
                     }
                     <ul>
@@ -95,9 +95,9 @@
                         <li>Priority support</li>
                         <li>Available via Microsoft Marketplace</li>
                     </ul>
-                    @if (purchaseStatus?.HasPurchased != true)
+                    @if (purchaseStatus?.HasPurchased != true || purchaseStatus?.Status != SubscriptionStatus.Active)
                     {
-                        <p class="mb-0"><small><a href="https://marketplace.microsoft.com/en-us/product/saas/breukel.bacpaccompatfixer?tab=Overview" target="_blank" rel="noopener noreferrer">Get Premium on Microsoft Marketplace</a></small></p>
+                        <p class="mb-0"><small><a href="https://marketplace.microsoft.com/en-us/product/saas/breukel.bacpaccompatfixer?tab=Overview" target="_blank" rel="noopener noreferrer" aria-label="Get Premium on Microsoft Marketplace (opens in new tab)">Get Premium on Microsoft Marketplace</a></small></p>
                     }
                 </div>
             </div>
