@@ -1,4 +1,5 @@
 using BacpacCompatFixer.Core;
+using System.Text;
 
 /*
     BacpacCompatFixer Console Application
@@ -20,6 +21,9 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Set console encoding to UTF-8 for emoji support
+        Console.OutputEncoding = Encoding.UTF8;
+
         // --- Decorative header at startup ---
         PrintHeader();
 
